@@ -819,7 +819,7 @@ class DanmakuCrawler:
 - **词云图**：使用 wordcloud 库生成词云图，直观展示高频词汇。
 - **水平条形图**：使用 matplotlib 库生成 TOP 20 高频词汇的条形图。
 - **组合展示**：将词云图与条形图组合在一张16:9的画布上，适合放入PPT进行展示，并自动保存为高清PNG文件。
->数据处理管道的骨架示例（清洗-统计-可视化，详见 [danmaku/data_pipeline.py](https://github.com/Drift-bottle/media-crawler-analysis/danmaku/data_pipeline.py)）：
+>数据处理管道的骨架示例（清洗-统计-可视化，详见 [danmaku/data_pipeline.py](https://github.com/Drift-bottle/media-crawler-analysis/blob/main/danmaku/pipeline.py)）：
 > - 将解析后的弹幕文本经多级清洗流入词频统计，最终生成词云与条形图的组合图。DanmakuStatic 负责清洗与统计，Visualization 负责图表渲染，两者通过词频字典解耦。
 
 ## 🧩 四、 技术难点与解决方案
@@ -846,7 +846,7 @@ class DanmakuCrawler:
 
 您可以自由地在任何媒介以任何形式复制和分享本作品，包括用于商业目的。但必须遵循以下条件：
 
-*   **署名** — 您必须给出**适当的署名**。署名应至少包括本作品名称（media-crawler-analysis）、作者（Drift-bottle）和来源(https://github.com/Drift-bottle/media-crawler-analysis)。您不得以任何方式暗示许可人为您或您的使用背书。
+*   **署名** — 您必须给出**适当的署名**。署名应至少包括本作品名称（media-crawler-analysis）、作者（Drift-bottle）和来源(https://github.com/Drift-bottle/media-crawler-analysis)。 您不得以任何方式暗示许可人为您或您的使用背书。
 *   **禁止演绎** — 您不得修改、转换或者基于本作品进行再创作，并且不得分发修改后的版本。
 
 > **补充说明**：本项目中的代码示例是为辅助分析文档而提供的解释性材料。在适用法律允许的最大范围内，作者不希望代码示例被解释为独立的、可修改的软件作品。如有任何疑问，请联系作者获取进一步许可。
