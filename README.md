@@ -819,7 +819,7 @@ class DanmakuCrawler:
 - **词云图**：使用 wordcloud 库生成词云图，直观展示高频词汇。
 - **水平条形图**：使用 matplotlib 库生成 TOP 20 高频词汇的条形图。
 - **组合展示**：将词云图与条形图组合在一张16:9的画布上，适合放入PPT进行展示，并自动保存为高清PNG文件。
->数据处理管道的骨架示例（清洗-统计-可视化，详见 [danmaku/data_pipeline.py](https://github.com/Drift-bottle/media-crawler-analysis/blob/main/danmaku/pipeline.py)）：
+>数据处理管道的示例（清洗-统计-可视化，详见 [danmaku/data_pipeline.py](https://github.com/Drift-bottle/media-crawler-analysis/blob/main/danmaku/pipeline.py)）：
 > - 将解析后的弹幕文本经多级清洗流入词频统计，最终生成词云与条形图的组合图。DanmakuStatic 负责清洗与统计，Visualization 负责图表渲染，两者通过词频字典解耦。
 
 ## 🧩 四、 技术难点与解决方案
