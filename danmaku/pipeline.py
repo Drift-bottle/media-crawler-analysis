@@ -163,6 +163,7 @@ class DanmakuStatic:
         else:
             err = f"❌数据未储存到{self._static_path}"
             self.logger.error(err)
+            raise Exception(err)
 
 
 # ------数据可视化类------
