@@ -109,9 +109,9 @@ class DanmakuStatic:
                     for w in content:
                         if w == base_word:
                             i += 1
-                            if i >= 3 and w == content[2]:
+                            if i >= 2 and w == content[1]:
                                 break
-                    if i >= 3:
+                    if i >= 2:
                         continue
 
                     # 清洗数据
