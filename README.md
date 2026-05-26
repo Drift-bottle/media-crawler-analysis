@@ -171,22 +171,25 @@ class DanmakuCrawler:
         
     # 以下为 fetch_danmaku 的核心流程示例，省略了具体的日志记录,数据处理与异常分支
     @logger
-    async def fetch_danmaku(self, url, seg_url, video_url, api_key, video_type, params, **kwargs):
+    async def fetch_danmaku(self, url, seg_url, api_key, video_type, params, video_url=None, **kwargs):
         """
         完整弹幕抓取流程: 获取视频信息 -> 按内容层级逐片遍历请求弹幕 -> 解析并存储
         Args:
             url: 用于获取视频关键信息的 url
             seg_url: 用于获取视频弹幕的 url
-            video_url: 需要处理验证码的 url
             api_key: CapSolver 所需的 clientKey
             video_type: 视频类型
             params: 查询参数(供 请求弹幕数据的函数 用)
+            video_url: 需要处理验证码的 url(非官方video)
             kwargs: headers请求头, logger(供 @logger 使用)
         """
         # 将依赖注入给 Danmaku，实现职责分离
         async with Danmaku(cookies=self.cookies, logger=self.logger) as resp_obj:
             # 使用 resp_obj 进行网络请求...
-            # 获取必要参数并进行是否成功获取的判断...
+            # 中间业务逻辑...
+            # for 循环
+                # 获取必要参数并进行是否成功获取的判断...
+                # 中间业务逻辑...
                 # for循环遍历...
                     # 中间业务逻辑...
                     # 预先随机选 min_seg - max_seg 个分段索引作为"触发点"
@@ -199,13 +202,18 @@ class DanmakuCrawler:
                         # 中间业务逻辑...
                         # 请求弹幕数据
                         resp_danmaku = await ...
-                    
+                
                         # 获取该次请求的耗时
                         response_time = resp_obj.get_last_response()
                 
                         if resp_danmaku:
                             # 获取数据与数据处理操作...
-                            if len_danmaku == 0:
+                            if resp_danmaku.status_code == 304:
+                                self.logger.warning(f"分段 {seg_idx} 可能超出视频时长范围, 无数据")
+                                # 延时操作
+                                await self.time_delay(p, max_p, title, seg_idx, max_seg_idx, response_time)
+                                continue
+                            elif len_danmaku == 0:
                                 # 延时操作
                                 await self.time_delay(p, max_p, title, seg_idx, max_seg_idx, response_time)
                                 continue
@@ -459,7 +467,8 @@ class Danmaku(Requests):
 
                 try:
                     # 检测status_code
-                    if resp.status_code == 200:
+                    normal_code = [200, 304]
+                    if resp.status_code in normal_code:
                         # 检查风控响应头, 若存在 risk_content 则表示触发风控验证
                         risk_content = resp.headers.get('...')
                         if risk_content:
@@ -487,7 +496,7 @@ class DanmakuCrawler:
         self.logger = logger or logging.getLogger(__name__)
         # 其他初始化逻辑...
 
-    async def fetch_danmaku(self, url, seg_url, video_url, api_key, video_type, params, **kwargs):
+    async def fetch_danmaku(self, url, seg_url, api_key, video_type, params, video_url=None, **kwargs):
         """
         完整弹幕抓取流程: 获取视频信息 -> 按内容层级逐片遍历请求弹幕 -> 解析并存储
         详细参数说明见 智能延时策略 文档。
@@ -495,7 +504,10 @@ class DanmakuCrawler:
         # 将依赖注入给 Danmaku，实现职责分离
         async with Danmaku(cookies=self.cookies, logger=self.logger) as resp_obj:
             # 使用 resp_obj 进行网络请求...
-            # 获取必要参数并进行是否成功获取的判断...
+            # 中间业务逻辑...
+            # for 循环
+                # 获取必要参数并进行是否成功获取的判断...
+                # 中间业务逻辑...
                 # for循环遍历...
                     # 中间业务逻辑...
                 
@@ -681,7 +693,8 @@ class Danmaku(Requests):
 
                 try:
                     # 检测status_code
-                    if resp.status_code == 200:
+                    normal_code = [200, 304]
+                    if resp.status_code in normal_code:
                         # 检查风控响应头, 若存在 risk_content 则表示触发风控验证
                         risk_content = resp.headers.get('...')
                         if risk_content:
@@ -710,7 +723,7 @@ class DanmakuCrawler:
         self.logger = logger or logging.getLogger(__name__)
         # 其他初始化逻辑...
 
-    async def fetch_danmaku(self, url, seg_url, video_url, api_key, video_type, params, **kwargs):
+    async def fetch_danmaku(self, url, seg_url ,api_key, video_type, params, video_url=None, **kwargs):
         """
         完整弹幕抓取流程: 获取视频信息 -> 按内容层级逐片遍历请求弹幕 -> 解析并存储
         详细参数说明见 智能延时策略 文档。
@@ -718,10 +731,13 @@ class DanmakuCrawler:
         # 将依赖注入给 Danmaku，实现职责分离
         async with Danmaku(cookies=self.cookies, logger=self.logger) as resp_obj:
             # 使用 resp_obj 进行网络请求...
-            # 获取必要参数并进行是否成功获取的判断...
+            # 中间业务逻辑...
+            # for 循环
+                # 获取必要参数并进行是否成功获取的判断...
+                # 中间业务逻辑...
                 # for循环遍历...
                     # 中间业务逻辑...
-                
+                    
                     # for循环遍历...
                         # 中间业务逻辑...
                         # 请求弹幕数据
@@ -740,7 +756,7 @@ from collections import Counter
 
 @dataclass
 class DanmakuSingleP:
-    """DanmakuCrawler类中使用, 用于储存每个分 P 所有分段的所有弹幕的列表"""
+    """DanmakuCrawler类中使用, 用于储存每个分 P 或每个 Ep 的所有弹幕的列表"""
     title: str
     danmaku_p_list: list
 
@@ -770,7 +786,7 @@ class DanmakuCrawler:
             self.logger.error(f"❌弹幕解析失败: {e}")
             return []
         
-    async def fetch_danmaku(self, url, seg_url, video_url, api_key, video_type, params, **kwargs):
+    async def fetch_danmaku(self, url, seg_url, api_key, video_type, params, video_url=None, **kwargs):
         """
         完整弹幕抓取流程: 获取视频信息 -> 按内容层级逐片遍历请求弹幕 -> 解析并存储
         详细参数说明见 智能延时策略 文档。
@@ -778,7 +794,10 @@ class DanmakuCrawler:
         # 将依赖注入给 Danmaku，实现职责分离
         async with Danmaku(cookies=self.cookies, logger=self.logger) as resp_obj:
             # 使用 resp_obj 进行网络请求...
-            # 获取必要参数并进行是否成功获取的判断...
+            # 中间业务逻辑...
+            # for 循环
+                # 获取必要参数并进行是否成功获取的判断...
+                # 中间业务逻辑...
                 # for循环遍历...
                     title = ... # 必要参数之一
                     # 中间业务逻辑...
