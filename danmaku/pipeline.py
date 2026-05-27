@@ -228,7 +228,7 @@ class Visualization:
             for i, word_p_dict in enumerate(data):
                 for title, word_p_p_dict in word_p_dict.items():
                     try:
-                        # 生成组合图片
+                        # 生成并保存组合图片
                         save_path = self.create_combined_chart(word_p_p_dict, title, path, i + 1)
 
                         # 设置文件夹中应有的文件数
@@ -237,7 +237,7 @@ class Visualization:
                         # 文件夹中实际文件数
                         real_num = len(os.listdir(path))
 
-                        # 即时验证文件是否成功生成
+                        # 验证图片是否成功保存
                         if os.path.isfile(save_path) and os.path.getsize(save_path) > 0:
                             self.logger.info(f"✅第 {i + 1} 张图表已全部保存至{path}")
                         else:
