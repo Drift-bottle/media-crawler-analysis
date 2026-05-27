@@ -189,7 +189,7 @@ class Visualization:
         wc.generate_from_frequencies(freq_dict)
         ax1.imshow(wc, interpolation='bilinear')
         ax1.axis('off')  # 隐藏坐标轴
-        ax1.set_title(f'{num}_{title}', fontsize=16, fontweight='bold')
+        ax1.set_title(f'{title}', fontsize=16, fontweight='bold')
 
         # ---- 右侧: 条形图 ----
         # 获取词和词频
@@ -199,7 +199,7 @@ class Visualization:
         # 绘制水平条形图(y 轴为词, x 轴为词频)
         ax2.barh(words, freqs, color='#5B9BD5')  # 使用一种柔和的蓝色
         ax2.set_xlabel('出现次数', fontsize=14)
-        ax2.set_title(f'{num}_{title} - 高频词汇 Top 20', fontsize=16, fontweight='bold')
+        ax2.set_title(f'{title} - 高频词汇 Top 20', fontsize=16, fontweight='bold')
 
         # 调整y轴标签的字体大小, 避免标签过长导致重叠
         ax2.tick_params(axis='y', labelsize=10)
@@ -208,9 +208,11 @@ class Visualization:
         plt.tight_layout()
 
         # 保存图片
-        save_path = os.path.join(main_path, f'{title}.png')
+        save_path = os.path.join(main_path, f'{num}_{title}.png')
         fig.savefig(save_path, dpi=150, bbox_inches='tight')
         plt.close(fig)  # 释放内存
+
+        return save_path
 
 
     def save_combined_figure(self):
@@ -227,16 +229,18 @@ class Visualization:
                 for title, word_p_p_dict in word_p_dict.items():
                     try:
                         # 生成组合图片
-                        self.create_combined_chart(word_p_p_dict, title, path, i + 1)
+                        save_path = self.create_combined_chart(word_p_p_dict, title, path, i + 1)
+
+                        # 设置文件夹中应有的文件数
+                        formal_num = i + 1
+
+                        # 文件夹中实际文件数
+                        real_num = len(os.listdir(path))
+
+                        # 即时验证文件是否成功生成
+                        if os.path.isfile(save_path) and os.path.getsize(save_path) > 0:
+                            self.logger.info(f"✅第 {i + 1} 张图表已全部保存至{path}")
+                        else:
+                            self.logger.error(f"❌第 {i + 1} 张图表未保存至{path} | save_path: {save_path} | 应有文件数: {formal_num} | 实际文件数: {real_num}")
                     except Exception as e:
                         self.logger.error(f"❌ create_combined_chart | {type(e).__name__}: {e}")
-                        raise e
-
-                # 设置文件夹中应有的文件数
-                formal_num = i + 1
-                # 文件夹中实际文件数
-                real_num = len(os.listdir(path))
-                if real_num == formal_num:
-                    self.logger.info(f"✅第 {i + 1} 张图表已全部保存至{path}")
-                else:
-                    self.logger.warning(f"❌第 {i + 1} 张图表未保存至{path} | 实际文件数: {real_num}")
