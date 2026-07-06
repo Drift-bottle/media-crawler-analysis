@@ -361,7 +361,7 @@ class Requests:
         # 唯一区别: _update_keys 用的重试装饰器未设置 after
 
         @retry_decorator_status_code
-        @retry_decorator # 处理的是没有被外层层捕获的异常
+        @retry_decorator # 处理的是没有被外层捕获的异常
         @logger
         async def _update_keys(self, **kwargs) -> None:
             """
@@ -454,7 +454,7 @@ class Danmaku(Requests):
         )
 
         @retry_decorator_status_code
-        @retry_decorator # 处理的是没有被外层层捕获的异常
+        @retry_decorator # 处理的是没有被外层捕获的异常
         @logger
         async def inter_face_danmaku(self, url, video_url, api_key, **kwargs):
             """
@@ -686,7 +686,7 @@ class Danmaku(Requests):
         # 定义重试装饰器（见分层重试模块）
         
         @retry_decorator_status_code
-        @retry_decorator # 处理的是没有被外层层捕获的异常
+        @retry_decorator # 处理的是没有被外层捕获的异常
         @logger
         async def inter_face_danmaku(self, url, video_url, api_key, **kwargs):
             """

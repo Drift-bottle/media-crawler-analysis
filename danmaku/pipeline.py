@@ -239,7 +239,7 @@ class Visualization:
 
                         # 验证图片是否成功保存
                         if os.path.isfile(save_path) and os.path.getsize(save_path) > 0:
-                            self.logger.info(f"✅第 {i + 1} 张图表已全部保存至{path}")
+                            self.logger.info(f"✅第 {i + 1} 张图表已保存至{path}")
                         else:
                             self.logger.error(f"❌第 {i + 1} 张图表未保存至{path} | save_path: {save_path} | 应有文件数: {formal_num} | 实际文件数: {real_num}")
                     except Exception as e:
