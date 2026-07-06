@@ -106,7 +106,7 @@ async def main():
 
 **策略逻辑**：
 >说明：下文"策略逻辑"中的英文标注（如 num、NUM、a、b、c、d、e、f、min_seg、max_seg、Max_s、Min_s）均指向代码中直接硬编码的数字，仅用于此处策略叙述，并非可配置参数。代码中实际使用的分P标识（p、max_p 等）不在此列。
-- **分段触发**：仅当分P分段数较多（≥num）时启用。为每个分P预先随机选定min_seg - max_seg个“触发分段”，到达时执a - b秒长延时，模拟“停下来思考”或“被其他事情打断”的场景。 。
+- **分段触发**：仅当分P分段数较多（≥num）时启用。根据当前最大分段数预先随机选几个分段索引作为“触发分段”，到达时执a - b秒长延时，模拟“停下来思考”或“被其他事情打断”的场景。 。
 - **动态概率**：针对分段数较少（<num）的视频。内部维护计数器，每经历一次常规等待后+1。计数器越大，下次触发长延时的概率越高（公式 1/(NUM-计数器)，满NUM强制触发并重置），使长延时集中倾向中后段，接近人类注意力衰减的自然节奏。
 - **自适应调整**：（用于根据网络状态与时段动态修正等待行为，减小被识别为规律性请求模式的可能性。）
 - 以网络响应耗时为反馈信号。耗时超 Max_s 秒时触发a - b秒长延时，作为风控退避——在分支一中其优先级低于计数器与动态概率，在分支二中低于分段触发点。
@@ -192,11 +192,16 @@ class DanmakuCrawler:
                 # 中间业务逻辑...
                 # for循环遍历...
                     # 中间业务逻辑...
-                    # 预先随机选 min_seg - max_seg 个分段索引作为"触发点"
+                    # 根据当前最大分段数预先随机选几个分段索引作为"触发分段"
                     if not hasattr(self, '_trigger_seg'):
                         self._trigger_seg = []
-                        random_num = random.randint(min_seg, max_seg)
-                        trigger = [random.randint(1, max_seg_idx) for i in range(random_num)]
+                        if max_segment_index < 3:
+                            pass
+                        elif 3 <= max_segment_index <= 10:
+                            random_num = random.randint(1, 3)
+                        else:
+                            random_num = random.randint(max_segment_index//10 + 1, max_segment_index//4)
+                        trigger = [random.sample(range(1, max_segment_index), random_num)]
                         self._trigger_seg.extend(trigger)
                     # for循环遍历...
                         # 中间业务逻辑...
