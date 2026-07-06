@@ -200,7 +200,7 @@ class DanmakuCrawler:
                         elif 3 <= max_segment_index <= 10:
                             random_num = random.randint(1, 3)
                         else:
-                            random_num = random.randint(max_segment_index//10 + 1, max_segment_index//4)
+                            random_num = random.randint(max_segment_index//10 + 1, max_segment_index//4 + 1)
                         trigger = [random.sample(range(1, max_segment_index), random_num)]
                         self._trigger_seg.extend(trigger)
                     # for循环遍历...
