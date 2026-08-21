@@ -1,23 +1,27 @@
+from models import StaticDanmakuSingleCid
+
 import matplotlib.pyplot as plt
 import emoji
-import re
 from wordcloud import WordCloud
-from collections import Counter
-from models import StaticDanmakuSingleP
-import json
 import ijson
+
+from collections import Counter
+import json
 import os
 import logging
 from typing import List, Any
+import re
 
 
-def json_data_is_not_empty(filepath, logger):
+def json_data_is_not_empty(filepath, **kwargs) -> bool:
     """
     判断文件是否成功存入数据
+
     Args:
         filepath: 文件路径
-        logger: Logger
+        **kwargs: logger（logging 的 Logger 实例）
     """
+    logger = kwargs.get('logger' ,logging.getLogger(__name__))
     if not os.path.isfile(filepath) or os.path.getsize(filepath) == 0:
         return False
     with open(filepath, 'r', encoding='utf-8') as f:
@@ -42,56 +46,89 @@ def json_data_is_not_empty(filepath, logger):
 
 class SaveData:
     """保存解析后的数据"""
-    def __init__(self, data: List[Any], filepath: str, logger=None):
-        self.data = data # 解析后的数据
-        self._filepath = filepath # 储存弹幕数据的完整路径
-        self.logger = logger or logging.getLogger(__name__) # 设置logger
+    def __init__(
+            self,
+            data: List[Any],
+            danmaku_storage_path: str,
+            **kwargs
+    ) -> None:
+        """
+        初始化数据保存器
+
+        Args:
+            data: 解析后的弹幕数据
+            danmaku_storage_path: 储存弹幕数据的完整路径
+            **kwargs: logger（logging 的 Logger 实例）
+        """
+        self._data = data
+        self._danmaku_storage_path = danmaku_storage_path
+        self._logger = self._logger = kwargs.get('logger' ,logging.getLogger(__name__))
 
     def save_to_json(self) -> None:
         """将数据储存到json文件中"""
-        if len(self.data) == 0:
+        if len(self._data) == 0:
             err = "❌没有储存到数据"
-            self.logger.error(err)
+            self._logger.error(err)
             raise Exception(err)
-        danmaku_dict = [danmaku.to_dict() if hasattr(danmaku, 'to_dict') else danmaku for danmaku in self.data]
-        with open(self._filepath, 'w', encoding='utf-8') as f:
+        danmaku_dict = [danmaku.to_dict() if hasattr(danmaku, 'to_dict') else danmaku for danmaku in self._data]
+        with open(self._danmaku_storage_path, 'w', encoding='utf-8') as f:
             json.dump(danmaku_dict, f, ensure_ascii=False, indent=4)
-        if json_data_is_not_empty(self._filepath, logger=self.logger):
-            self.logger.info(f"✅数据已储存到{self._filepath}")
+        if json_data_is_not_empty(self._danmaku_storage_path, logger=self._logger):
+            self._logger.info(f"✅数据已储存到{self._danmaku_storage_path}")
         else:
-            err = f"❌数据未储存到{self._filepath}"
-            self.logger.error(err)
-            raise Exception(err)
+            e = f"❌数据未储存到{self._danmaku_storage_path}"
+            self._logger.error(e)
+            raise Exception(e)
 
 
 # ------词频统计类------
 class DanmakuStatic:
     """进行词频统计和数据清洗"""
-    def __init__(self, filepath, static_path, logger=None):
-        self._filepath = filepath # 储存弹幕数据的完整路径
-        self._static_path = static_path # 储存词频统计结果的完整路径
-        self._counter_list = []  # 储存所有分 P 或 Ep 的 counter 对象
-        self.logger = logger or logging.getLogger(__name__)  # 设置logger
+    def __init__(
+            self,
+            danmaku_storage_path,
+            word_frequency_statistics_storage_path,
+            **kwargs
+    ) -> None:
+        """
+        初始化数据统计清洗器
 
-    def load_stopwords(self, filename='stopwords.txt'):
+        Args:
+            danmaku_storage_path: 储存弹幕数据的完整路径
+            word_frequency_statistics_storage_path: 储存词频统计结果的完整路径
+            **kwargs: logger（logging 的 Logger 实例）
+        """
+        self._danmaku_storage_path = danmaku_storage_path
+        self._static_path = word_frequency_statistics_storage_path
+        self._logger = kwargs.get('logger' ,logging.getLogger(__name__))
+        self._counter_list = []  # 储存所有分 P 或 Ep 的 counter 对象
+
+    @staticmethod
+    def load_stopwords(filepath) -> List[str] | set:
         """加载停用词列表"""
         try:
-            with open(filename, 'r', encoding='utf-8') as f:
+            with open(filepath, 'r', encoding='utf-8') as f:
                 stopwords = [stopword.strip() for stopword in f]
             return stopwords
         except FileNotFoundError:
             return set()
 
-    def word_frequency(self, stopwords=None, min_len=2):
-        """对弹幕列表进行分词并统计词频, 生成储存 counter 对象的列表"""
-        with open(self._filepath, 'r', encoding='utf-8') as f:
+    def word_frequency(self, stopwords=None, min_len=2) -> None:
+        """
+        对弹幕列表进行分词并统计词频, 生成储存 counter 对象的列表
+
+        Args:
+            stopwords: 停用词列表
+            min_len: 每条被用来进行词频统计的弹幕的最小长度（默认为 2）
+        """
+        with open(self._danmaku_storage_path, 'r', encoding='utf-8') as f:
             for item in ijson.items(f, 'item'):
                 # 将所有弹幕合并为一个字符串
                 title = item['title'] # 获取分 P 或 Ep 的标题
-                danmaku_p_list = item['danmaku_p_list'] # 获取分 P 或 Ep 的弹幕列表
+                danmaku_cid_list = item['danmaku_cid_list'] # # 获取分 P 或 Ep 的弹幕列表
 
-                danmaku_p_list_copy = []  # 储存每个分 P 或每个 Ep 的弹幕数据
-                for danmaku_content in danmaku_p_list:
+                danmaku_cid_list_copy = []  # 储存每个分 P 或每个 Ep 的弹幕数据
+                for danmaku_content in danmaku_cid_list:
                     # 获取单个弹幕内容
                     content = danmaku_content
 
@@ -122,16 +159,15 @@ class DanmakuStatic:
                     if len(w) < min_len:
                         continue
 
-                    danmaku_p_list_copy.append(w)
+                    danmaku_cid_list_copy.append(w)
 
                 # 创建储存每个分 P 或 Ep 的 Counter 对象
-                p_counter = Counter(danmaku_p_list_copy)
-                # 创建 StaticDanmakuSingleP 对象
-                danmaku_p_dict_copy = StaticDanmakuSingleP(title=title, p_counter=p_counter)
-                self._counter_list.append(danmaku_p_dict_copy)
+                cid_counter = Counter(danmaku_cid_list_copy)
+                # 创建 StaticDanmakuSingleCid 对象
+                danmaku_cid_dict_copy = StaticDanmakuSingleCid(title=title, cid_counter=cid_counter)
+                self._counter_list.append(danmaku_cid_dict_copy)
 
-
-    def save_frequency(self, top_num=20):
+    def save_frequency(self, top_num=20) -> None:
         """将词频统计结果保存到文件, 并按频率降序输出前 top_num 个"""
         all_word = [] # 储存所有分 P 或 Ep 词频统计结果
         with open(self._static_path, 'w', encoding='utf-8') as f:
@@ -141,33 +177,55 @@ class DanmakuStatic:
 
                 # 直接获取标题和 Counter 对象
                 title = counter_dict.title
-                p_counter = counter_dict.p_counter
+                cid_counter = counter_dict.cid_counter
 
-                for word, count in p_counter.most_common(top_num):
+                for word, count in cid_counter.most_common(top_num):
                     word_p_p_dict[word] = count
                 word_p_dict[title] = word_p_p_dict
                 all_word.append(word_p_dict)
             json.dump(all_word, f, ensure_ascii=False, indent=4)
-        if json_data_is_not_empty(self._static_path, logger=self.logger):
-            self.logger.info(f"✅数据已储存到{self._static_path}")
+        if json_data_is_not_empty(self._static_path, logger=self._logger):
+            self._logger.info(f"✅数据已储存到{self._static_path}")
         else:
-            err = f"❌数据未储存到{self._static_path}"
-            self.logger.error(err)
-            raise Exception(err)
+            e = f"❌数据未储存到{self._static_path}"
+            self._logger.error(e)
+            raise Exception(e)
 
 
 # ------数据可视化类------
 class Visualization:
     """数据可视化, 生成词云图和条形图的组合图形"""
-    def __init__(self, static_path, doc_path, font_path, logger=None):
-        self.static_path = static_path # 储存词频统计结果的完整路径
-        self.doc_path = doc_path # 储存生成的条形图和词云图的文件夹路径
-        self.font_path = font_path  # 图表用的字体
-        self.logger = logger or logging.getLogger(__name__) # 设置logger
+    def __init__(
+            self,
+            static_path,
+            wc_plt_storage_path,
+            font_path,
+            **kwargs
+    ) -> None:
+        """
+        初始化数据可视化器
 
-    def create_combined_chart(self, freq_dict: dict, title: str, main_path: str, num: int):
+        Args:
+            static_path: 储存词频统计结果的完整路径
+            wc_plt_storage_path: 储存生成的条形图和词云图的文件夹路径
+            font_path: 绘制图表用的字体
+            **kwargs: logger（logging 的 Logger 实例）
+        """
+        self._static_path = static_path
+        self._wc_plt_storage_path = wc_plt_storage_path
+        self._font_path = font_path
+        self._logger = kwargs.get('logger' ,logging.getLogger(__name__))
+
+    def _create_combined_chart(
+            self,
+            freq_dict: dict,
+            title: str,
+            main_path: str,
+            num: int
+    ) -> str | None:
         """
         将词云图和条形图组合到一张16:9的画布上
+
         Args:
             freq_dict: 词云图和条形图所需的词频字典
             title: 图表和图片的标题
@@ -179,7 +237,7 @@ class Visualization:
 
         # ---- 左侧: 词云图 ----
         wc = WordCloud(
-            font_path=self.font_path,  # 支持中文的字体文件路径
+            font_path=self._font_path,  # 支持中文的字体文件路径
             background_color="white",
             width=800,  # 词云图的内部分辨率
             height=450,
@@ -214,22 +272,21 @@ class Visualization:
 
         return save_path
 
-
-    def save_combined_figure(self):
+    def save_combined_figure(self) -> None:
         """保存同时具有词云图和条形图的图片"""
         # 获取文件夹路径
-        path = self.doc_path
+        path = self._wc_plt_storage_path
         # 创建文件夹
         os.makedirs(path, exist_ok=True)
 
-        with open(self.static_path, 'r', encoding='utf-8') as f:
+        with open(self._static_path, 'r', encoding='utf-8') as f:
             data = json.load(f)
 
             for i, word_p_dict in enumerate(data):
                 for title, word_p_p_dict in word_p_dict.items():
                     try:
-                        # 生成并保存组合图片
-                        save_path = self.create_combined_chart(word_p_p_dict, title, path, i + 1)
+                        # 生成组合图片
+                        save_path = self._create_combined_chart(word_p_p_dict, title, path, i + 1)
 
                         # 设置文件夹中应有的文件数
                         formal_num = i + 1
@@ -237,10 +294,11 @@ class Visualization:
                         # 文件夹中实际文件数
                         real_num = len(os.listdir(path))
 
-                        # 验证图片是否成功保存
-                        if os.path.isfile(save_path) and os.path.getsize(save_path) > 0:
-                            self.logger.info(f"✅第 {i + 1} 张图表已保存至{path}")
+                        # 即时验证文件是否成功生成
+                        if save_path and os.path.isfile(save_path) and os.path.getsize(save_path) > 0:
+                            self._logger.info(f"✅第 {i + 1} 张图表已保存至{path}")
                         else:
-                            self.logger.error(f"❌第 {i + 1} 张图表未保存至{path} | save_path: {save_path} | 应有文件数: {formal_num} | 实际文件数: {real_num}")
+                            self._logger.error(
+                                f"❌第 {i + 1} 张图表未保存至{path} | save_path: {save_path} | 应有文件数: {formal_num} | 实际文件数: {real_num}")
                     except Exception as e:
-                        self.logger.error(f"❌ create_combined_chart | {type(e).__name__}: {e}")
+                        self._logger.error(f"❌ create_combined_chart | {type(e).__name__}: {e}")
