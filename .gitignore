@@ -1,5 +1,5 @@
 # 数据与日志
-stopwords.txt
+storage/
 *.log
 
 # Python 缓存与编译产物
